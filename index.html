@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thời Khóa Biểu Lớp 1</title>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #2196F3;
+            --bg-color: #f0f4f8;
+            --card-bg: #ffffff;
+            --border-color: #ddd;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 15px;
+            background-color: var(--bg-color);
+            color: #333;
+        }
+
+        .container {
+            max-width: 950px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        h2 {
+            margin: 0;
+            color: #2c3e50;
+            text-transform: uppercase;
+            font-size: 1.5rem;
+        }
+
+        .auth-btn {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            border: 2px solid var(--primary-color);
+            background: white;
+            color: var(--primary-color);
+            font-weight: bold;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .tab-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* Bảng thời khóa biểu toàn tuần */
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #fff;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 10px 6px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        th {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        /* Kiểu dáng hiển thị môn học kèm ảnh bìa */
+        .subject-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .book-cover {
+            width: 45px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            background-color: #eee;
+        }
+
+        .subject-title {
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        /* Chế độ xem Theo Ngày (Dành cho Học sinh) */
+        .day-view-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .session-box {
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .session-title {
+            font-weight: bold;
+            color: #1976d2;
+            border-bottom: 2px solid #1976d2;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .period-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 8px 0;
+            border-bottom: 1px dashed #eee;
+        }
+
+        .period-number {
+            background: var(--primary-color);
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        /* Lưu ý & Chân trang */
+        .note-box {
+            background-color: #fffde7;
+            border-left: 5px solid #fbc02d;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .admin-panel {
+            display: none;
+            background: #fff3e0;
+            border: 1px solid #ffe0b2;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        /* Responsive UI */
+        @media (max-width: 600px) {
+            .day-view-container {
+                grid-template-columns: 1fr;
+            }
+            .book-cover {
+                width: 35px;
+                height: 48px;
+            }
+            th, td {
+                padding: 6px 2px;
+                font-size: 12px;
+            }
+        }
+
+        /* Modal Đăng nhập */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 300px;
+        }
+        .modal-content input {
+            width: 100%;
+            padding: 8px;
+            margin: 8px 0;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h2>Thời Khóa Biểu Lớp 1</h2>
+        <button id="authBtn" class="auth-btn" onclick="openLoginModal()">Đăng nhập Admin</button>
+    </div>
+
+    <!-- Bảng điều khiển dành cho Admin -->
+    <div id="adminPanel" class="admin-panel">
+        <h3>Quản trị viên (Giáo viên)</h3>
+        <p>Chọn thao tác quản lý:</p>
+        <button onclick="toggleEditMode()" class="auth-btn">Chỉnh sửa Thời khoá biểu</button>
+        <button onclick="openBookManager()" class="auth-btn" style="background:#ff9800;">Quản lý Ảnh bìa sách</button>
+    </div>
+
+    <!-- Thanh chuyển đổi Chế độ Xem -->
+    <div class="controls">
+        <button id="btnToday" class="tab-btn active" onclick="switchView('today')">Hôm nay</button>
+        <button id="btnFull" class="tab-btn" onclick="switchView('full')">Toàn khóa biểu</button>
+    </div>
+
+    <!-- VIEW 1: Xem Hôm Nay -->
+    <div id="todayView">
+        <h3 id="currentDayTitle" style="text-align: center; color: #388e3c;"></h3>
+        <div class="day-view-container">
+            <div class="session-box">
+                <div class="session-title">BUỔI SÁNG</div>
+                <div id="morningPeriods"></div>
+            </div>
+            <div class="session-box">
+                <div class="session-title">BUỔI CHIỀU</div>
+                <div id="afternoonPeriods"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW 2: Xem Toàn tuần -->
+    <div id="fullView" class="table-responsive" style="display: none;">
+        <table id="scheduleTable">
+            <thead>
+                <tr>
+                    <th style="width: 8%;">Thứ</th>
+                    <th style="width: 8%;">Tiết</th>
+                    <th style="width: 42%;">SÁNG</th>
+                    <th style="width: 42%;">CHIỀU</th>
+                </tr>
+            </thead>
+            <tbody id="fullTableBody">
+                <!-- Nội dung sẽ tự động nạp từ JS -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Phần Ghi chú & Liên hệ GVCN -->
+    <div class="note-box">
+        <p><b>📌 Lưu ý đến lớp:</b> <span id="noteText">Đang tải...</span></p>
+        <p><b>👩‍🏫 GVCN:</b> <span id="teacherInfo">Đang tải...</span></p>
+    </div>
+</div>
+
+<!-- Modal Đăng Nhập -->
+<div id="loginModal" class="modal">
+    <div class="modal-content">
+        <h3>Đăng Nhập Quản Trị</h3>
+        <input type="email" id="loginEmail" placeholder="Email giáo viên">
+        <input type="password" id="loginPassword" placeholder="Mật khẩu">
+        <button onclick="login()" class="auth-btn" style="width: 100%;">Đăng nhập</button>
+        <button onclick="closeLoginModal()" style="width: 100%; margin-top: 5px; background: #ccc; border:none; padding:8px; border-radius:4px;">Hủy</button>
+    </div>
+</div>
+
+<!-- Modal Quản lý Ảnh Bìa Sách -->
+<div id="bookModal" class="modal">
+    <div class="modal-content" style="width: 400px; max-height: 80vh; overflow-y: auto;">
+        <h3>Cập nhật Ảnh Bìa Sách</h3>
+        <div id="bookList"></div>
+        <button onclick="closeBookModal()" style="width: 100%; margin-top: 10px; background: #ccc; border:none; padding:8px; border-radius:4px;">Đóng</button>
+    </div>
+</div>
+
+<script>
+    // -------------------------------------------------------------
+    // 1. CẤU HÌNH SUPABASE (Thay thông tin dự án của bạn vào đây)
+    // -------------------------------------------------------------
+    const SUPABASE_URL = "https://ncbgdgmblzvcpytvlrpm.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_GSlqWL9EKPhToWw3yI20lA_nU2PV8fV";
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Biến toàn cục lưu trữ dữ liệu
+    let subjectsMap = {}; 
+    let scheduleData = [];
+    let isEditMode = false;
+    let currentUser = null;
+
+    // Khoảng thời gian mặc định thời khóa biểu
+    const days = [2, 3, 4, 5, 6];
+    const periods = [1, 2, 3, 4];
+
+    // -------------------------------------------------------------
+    // 2. KHỞI TẠO DỮ LIỆU
+    // -------------------------------------------------------------
+    window.onload = async () => {
+        checkSession();
+        await loadSubjects();
+        await loadSchedule();
+        await loadSettings();
+        switchView('today');
+    };
+
+    async function checkSession() {
+        const { data: { session } } = await db.auth.getSession();
+        if (session) {
+            currentUser = session.user;
+            document.getElementById('authBtn').innerText = "Đăng xuất";
+            document.getElementById('authBtn').onclick = logout;
+            document.getElementById('adminPanel').style.display = "block";
+        }
+    }
+
+    async function loadSubjects() {
+        const { data, error } = await db.from('subjects').select('*');
+        if (!error && data) {
+            data.forEach(sub => {
+                subjectsMap[sub.name] = sub.cover_url;
+            });
+        }
+    }
+
+    async function loadSchedule() {
+        const { data, error } = await db.from('schedule').select('*');
+        if (!error && data) {
+            scheduleData = data;
+            renderFullTable();
+            renderTodayView();
+        }
+    }
+
+    async function loadSettings() {
+        const { data } = await db.from('settings').select('*');
+        if (data) {
+            data.forEach(item => {
+                if (item.key === 'note_text') document.getElementById('noteText').innerText = item.value;
+                if (item.key === 'teacher_info') document.getElementById('teacherInfo').innerText = item.value;
+            });
+        }
+    }
+
+    // -------------------------------------------------------------
+    // 3. XỬ LÝ GIAO DIỆN HIỂN THỊ
+    // -------------------------------------------------------------
+    function switchView(view) {
+        document.getElementById('btnToday').classList.toggle('active', view === 'today');
+        document.getElementById('btnFull').classList.toggle('active', view === 'full');
+        
+        if (view === 'today') {
+            document.getElementById('todayView').style.display = 'block';
+            document.getElementById('fullView').style.display = 'none';
+        } else {
+            document.getElementById('todayView').style.display = 'none';
+            document.getElementById('fullView').style.display = 'block';
+        }
+    }
+
+    // Lấy thông tin tiết học từ cache
+    function getSubject(day, period, session) {
+        const item = scheduleData.find(s => s.day_of_week === day && s.period === period && s.session === session);
+        return item ? item.subject_name : '';
+    }
+
+    // Tạo HTML hiển thị Môn học + Ảnh bìa
+    function renderSubjectHTML(subjectName) {
+        if (!subjectName) return '<span>---</span>';
+        const coverUrl = subjectsMap[subjectName];
+        let imgTag = coverUrl ? `<img src="${coverUrl}" class="book-cover" alt="${subjectName}">` : '';
+        return `
+            <div class="subject-card">
+                ${imgTag}
+                <span class="subject-title">${subjectName}</span>
+            </div>
+        `;
+    }
+
+    // Hiển thị giao diện "Hôm Nay"
+    function renderTodayView() {
+        const todayDate = new Date();
+        let dayOfWeek = todayDate.getDay() + 1; // 2 -> 7, 1 là Chủ nhật
+        
+        // Nếu là T7 hoặc Chủ nhật, mặc định hiển thị Thứ 2
+        if (dayOfWeek === 1 || dayOfWeek === 7) dayOfWeek = 2;
+
+        document.getElementById('currentDayTitle').innerText = `LỊCH HỌC THỨ ${dayOfWeek}`;
+
+        let morningHTML = '';
+        let afternoonHTML = '';
+
+        periods.forEach(p => {
+            const morningSub = getSubject(dayOfWeek, p, 'morning');
+            const afternoonSub = getSubject(dayOfWeek, p, 'afternoon');
+
+            morningHTML += `
+                <div class="period-item">
+                    <div class="period-number">${p}</div>
+                    <div>${renderSubjectHTML(morningSub)}</div>
+                </div>`;
+
+            afternoonHTML += `
+                <div class="period-item">
+                    <div class="period-number">${p}</div>
+                    <div>${renderSubjectHTML(afternoonSub)}</div>
+                </div>`;
+        });
+
+        document.getElementById('morningPeriods').innerHTML = morningHTML;
+        document.getElementById('afternoonPeriods').innerHTML = afternoonHTML;
+    }
+
+    // Hiển thị giao diện Toàn tuần
+    function renderFullTable() {
+        const tbody = document.getElementById('fullTableBody');
+        tbody.innerHTML = '';
+
+        days.forEach(d => {
+            periods.forEach((p, index) => {
+                const tr = document.createElement('tr');
+
+                // Cột Thứ (Gộp 4 ô)
+                if (index === 0) {
+                    tr.innerHTML += `<td rowspan="4"><b>${d}</b></td>`;
+                }
+
+                // Cột Tiết
+                tr.innerHTML += `<td>${p}</td>`;
+
+                // Cột Sáng & Chiều
+                const mSub = getSubject(d, p, 'morning');
+                const aSub = getSubject(d, p, 'afternoon');
+
+                if (isEditMode) {
+                    tr.innerHTML += `<td>${renderSelectSubject(d, p, 'morning', mSub)}</td>`;
+                    tr.innerHTML += `<td>${renderSelectSubject(d, p, 'afternoon', aSub)}</td>`;
+                } else {
+                    tr.innerHTML += `<td>${renderSubjectHTML(mSub)}</td>`;
+                    tr.innerHTML += `<td>${renderSubjectHTML(aSub)}</td>`;
+                }
+
+                tbody.appendChild(tr);
+            });
+        });
+    }
+
+    // render Select Box trong chế độ Sửa
+    function renderSelectSubject(day, period, session, currentSub) {
+        let options = `<option value="">-- Trống --</option>`;
+        Object.keys(subjectsMap).forEach(sub => {
+            options += `<option value="${sub}" ${sub === currentSub ? 'selected' : ''}>${sub}</option>`;
+        });
+        return `<select onchange="updateSchedule(${day}, ${period}, '${session}', this.value)">${options}</select>`;
+    }
+
+    // -------------------------------------------------------------
+    // 4. THAO TÁC CỦA ADMIN (ĐĂNG NHẬP, SỬA LỊCH, UPLOAD BÌA SÁCH)
+    // -------------------------------------------------------------
+    function openLoginModal() { document.getElementById('loginModal').style.display = 'flex'; }
+    function closeLoginModal() { document.getElementById('loginModal').style.display = 'none'; }
+
+    async function login() {
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        const { data, error } = await db.auth.signInWithPassword({ email, password });
+        if (error) {
+            alert("Đăng nhập thất bại: " + error.message);
+        } else {
+            alert("Đăng nhập thành công!");
+            location.reload();
+        }
+    }
+
+    async function logout() {
+        await db.auth.signOut();
+        location.reload();
+    }
+
+    function toggleEditMode() {
+        isEditMode = !isEditMode;
+        switchView('full');
+        renderFullTable();
+    }
+
+    // Lưu chỉnh sửa thời khóa biểu
+    async function updateSchedule(day, period, session, subjectName) {
+        const { error } = await db.from('schedule').upsert({
+            day_of_week: day,
+            period: period,
+            session: session,
+            subject_name: subjectName
+        }, { onConflict: 'day_of_week,period,session' });
+
+        if (error) alert("Lỗi khi lưu: " + error.message);
+        else await loadSchedule();
+    }
+
+    // Modal Quản lý Ảnh bìa
+    function openBookManager() {
+        document.getElementById('bookModal').style.display = 'flex';
+        const listDiv = document.getElementById('bookList');
+        listDiv.innerHTML = '';
+
+        Object.keys(subjectsMap).forEach(subName => {
+            const coverUrl = subjectsMap[subName];
+            listDiv.innerHTML += `
+                <div style="border-bottom:1px solid #ccc; padding: 10px 0;">
+                    <b>${subName}</b><br>
+                    ${coverUrl ? `<img src="${coverUrl}" style="height:50px"><br>` : ''}
+                    <input type="file" id="file_${subName}" accept="image/*">
+                    <button onclick="uploadCover('${subName}')">Tải ảnh lên</button>
+                </div>
+            `;
+        });
+    }
+
+    function closeBookModal() { document.getElementById('bookModal').style.display = 'none'; }
+
+    // Upload Bìa sách lên Supabase Storage
+    async function uploadCover(subjectName) {
+        const fileInput = document.getElementById(`file_${subjectName}`);
+        if (!fileInput.files.length) return alert("Vui lòng chọn 1 tệp ảnh!");
+
+        const file = fileInput.files[0];
+        const filePath = `covers/${Date.now()}_${file.name}`;
+
+        // 1. Upload ảnh
+        const { data: uploadData, error: uploadErr } = await db.storage.from('book-covers').upload(filePath, file);
+        if (uploadErr) return alert("Lỗi upload: " + uploadErr.message);
+
+        // 2. Lấy public URL
+        const { data: urlData } = db.storage.from('book-covers').getPublicUrl(filePath);
+        const publicUrl = urlData.publicUrl;
+
+        // 3. Cập nhật vào Database
+        const { error: dbErr } = await db.from('subjects').update({ cover_url: publicUrl }).eq('name', subjectName);
+        if (dbErr) return alert("Lỗi cập nhật CSDL: " + dbErr.message);
+
+        alert("Thành công!");
+        await loadSubjects();
+        openBookManager();
+        renderFullTable();
+        renderTodayView();
+    }
+</script>
+
+</body>
+</html>
