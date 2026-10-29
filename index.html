@@ -121,7 +121,7 @@
             margin: 0 auto;
         }
 
-        /* Tăng kích thước ảnh bìa sách ở tab Toàn khóa biểu */
+        /* Ảnh bìa sách ở tab Toàn khóa biểu */
         .book-cover {
             width: 55px;
             height: 75px;
@@ -139,7 +139,7 @@
             text-align: center;
         }
 
-        /* Chế độ xem Theo Ngày (Dành cho Học sinh) */
+        /* Chế độ xem Theo Ngày (Dành cho Học sinh) - Chia lưới 4 ô (2 cột x 2 hàng) */
         .day-view-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -159,30 +159,69 @@
             color: #1976d2;
             border-bottom: 2px solid #1976d2;
             padding-bottom: 5px;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             text-align: center;
+            font-size: 1.1rem;
         }
 
-        .period-item {
+        /* Lưới 4 tiết học trong 1 buổi */
+        .periods-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .period-card-grid {
+            background: #ffffff;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 10px;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 15px;
-            padding: 8px 0;
-            border-bottom: 1px dashed #eee;
+            position: relative;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: 0.2s;
         }
 
-        .period-number {
+        .period-card-grid:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .period-badge {
+            position: absolute;
+            top: 8px;
+            left: 8px;
             background: var(--primary-color);
             color: white;
-            width: 28px;
-            height: 28px;
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 12px;
-            flex-shrink: 0;
+            font-size: 11px;
+        }
+
+        /* Ảnh bìa sách lớn hơn ở giao diện xem ngày */
+        .book-cover-large {
+            width: 65px;
+            height: 90px;
+            object-fit: cover;
+            border-radius: 6px;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+            background-color: #eee;
+            margin-top: 5px;
+            margin-bottom: 8px;
+        }
+
+        .subject-title-large {
+            font-weight: bold;
+            font-size: 13px;
+            color: #2c3e50;
+            text-align: center;
         }
 
         /* Giao diện nút GV Quản lý thu gọn dạng Dropdown */
@@ -237,7 +276,7 @@
             line-height: 1.6;
         }
 
-        /* Responsive UI cho thiết bị di động */
+        /* Responsive UI cho điện thoại nhỏ */
         @media (max-width: 600px) {
             .day-view-container {
                 grid-template-columns: 1fr;
@@ -246,13 +285,17 @@
                 width: 48px;
                 height: 65px;
             }
+            .book-cover-large {
+                width: 55px;
+                height: 75px;
+            }
             th, td {
                 padding: 6px 2px;
                 font-size: 12px;
             }
         }
 
-        /* Modal Đăng nhập */
+        /* Modal Đăng nhập & Quản lý */
         .modal {
             display: none;
             position: fixed;
@@ -284,7 +327,7 @@
         <button id="authBtn" class="auth-btn" onclick="openLoginModal()">Đăng nhập Admin</button>
     </div>
 
-    <!-- Bảng điều khiển dành cho Admin (Được thu gọn trong nút "GV Quản lý") -->
+    <!-- Bảng điều khiển dành cho Admin -->
     <div id="adminPanel" class="admin-panel">
         <button class="menu-toggle-btn" onclick="toggleAdminMenu()">
             <span>⚙️ GV Quản lý</span>
@@ -310,17 +353,17 @@
         <button id="btnFull" class="tab-btn" onclick="switchView('full')">Toàn khóa biểu</button>
     </div>
 
-    <!-- VIEW 1: Xem Hôm Nay -->
+    <!-- VIEW 1: Xem Hôm Nay (Chia lưới 4 ô) -->
     <div id="todayView">
-        <h3 id="currentDayTitle" style="text-align: center; color: #388e3c;"></h3>
+        <h3 id="currentDayTitle" style="text-align: center; color: #388e3c; margin-bottom: 15px;"></h3>
         <div class="day-view-container">
             <div class="session-box">
-                <div class="session-title">BUỔI SÁNG</div>
-                <div id="morningPeriods"></div>
+                <div class="session-title">☀️ BUỔI SÁNG</div>
+                <div id="morningPeriods" class="periods-grid"></div>
             </div>
             <div class="session-box">
-                <div class="session-title">BUỔI CHIỀU</div>
-                <div id="afternoonPeriods"></div>
+                <div class="session-title">🌙 BUỔI CHIỀU</div>
+                <div id="afternoonPeriods" class="periods-grid"></div>
             </div>
         </div>
     </div>
@@ -337,7 +380,7 @@
                 </tr>
             </thead>
             <tbody id="fullTableBody">
-                <!-- Nội dung sẽ tự động nạp từ JS -->
+                <!-- Nội dung tự động nạp từ JS -->
             </tbody>
         </table>
     </div>
@@ -377,7 +420,6 @@
     const SUPABASE_KEY = "sb_publishable_GSlqWL9EKPhToWw3yI20lA_nU2PV8fV";
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Biến toàn cục lưu trữ dữ liệu
     let subjectsMap = {}; 
     let scheduleData = [];
     let isEditMode = false;
@@ -386,9 +428,6 @@
     const days = [2, 3, 4, 5, 6];
     const periods = [1, 2, 3, 4];
 
-    // -------------------------------------------------------------
-    // 2. KHỞI TẠO DỮ LIỆU
-    // -------------------------------------------------------------
     window.onload = async () => {
         checkSession();
         await loadSubjects();
@@ -435,9 +474,6 @@
         }
     }
 
-    // -------------------------------------------------------------
-    // 3. XỬ LÝ GIAO DIỆN HIỂN THỊ & MENU XỔ DƯỚI
-    // -------------------------------------------------------------
     function toggleAdminMenu() {
         const menu = document.getElementById('adminMenuContent');
         const arrow = document.getElementById('menuArrow');
@@ -468,6 +504,7 @@
         return item ? item.subject_name : '';
     }
 
+    // Hiển thị môn học cho bảng toàn tuần (Ảnh vừa)
     function renderSubjectHTML(subjectName) {
         if (!subjectName) return '<span>---</span>';
         const coverUrl = subjectsMap[subjectName];
@@ -480,6 +517,18 @@
         `;
     }
 
+    // Hiển thị môn học cho giao diện Lưới Ngày (Ảnh lớn rõ nét)
+    function renderSubjectLargeHTML(subjectName) {
+        if (!subjectName) return '<span style="color:#aaa; font-style:italic; font-size:12px;">Trống</span>';
+        const coverUrl = subjectsMap[subjectName];
+        let imgTag = coverUrl ? `<img src="${coverUrl}" class="book-cover-large" alt="${subjectName}">` : '<div style="height:90px; display:flex; align-items:center; color:#999;">Không có ảnh</div>';
+        return `
+            ${imgTag}
+            <span class="subject-title-large">${subjectName}</span>
+        `;
+    }
+
+    // Hiển thị giao diện "Hôm Nay" dạng Lưới 4 ô (2x2)
     function renderTodayView() {
         const todayDate = new Date();
         let dayOfWeek = todayDate.getDay() + 1; 
@@ -495,15 +544,15 @@
             const afternoonSub = getSubject(dayOfWeek, p, 'afternoon');
 
             morningHTML += `
-                <div class="period-item">
-                    <div class="period-number">${p}</div>
-                    <div>${renderSubjectHTML(morningSub)}</div>
+                <div class="period-card-grid">
+                    <div class="period-badge">${p}</div>
+                    ${renderSubjectLargeHTML(morningSub)}
                 </div>`;
 
             afternoonHTML += `
-                <div class="period-item">
-                    <div class="period-number">${p}</div>
-                    <div>${renderSubjectHTML(afternoonSub)}</div>
+                <div class="period-card-grid">
+                    <div class="period-badge">${p}</div>
+                    ${renderSubjectLargeHTML(afternoonSub)}
                 </div>`;
         });
 
@@ -546,9 +595,7 @@
         return `<select onchange="updateSchedule(${day}, ${period}, '${session}', this.value)">${options}</select>`;
     }
 
-    // -------------------------------------------------------------
-    // 4. TÍNH NĂNG NHẬP / XUẤT EXCEL
-    // -------------------------------------------------------------
+    // Excel functions
     function downloadExcelTemplate() {
         const sampleData = [
             { day_of_week: 2, period: 1, session: "morning", subject_name: "HĐTN" },
@@ -613,9 +660,6 @@
         reader.readAsArrayBuffer(file);
     }
 
-    // -------------------------------------------------------------
-    // 5. THAO TÁC CỦA ADMIN (ĐĂNG NHẬP, SỬA LỊCH, UPLOAD BÌA SÁCH)
-    // -------------------------------------------------------------
     function openLoginModal() { document.getElementById('loginModal').style.display = 'flex'; }
     function closeLoginModal() { document.getElementById('loginModal').style.display = 'none'; }
 
