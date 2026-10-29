@@ -102,6 +102,7 @@
             padding: 10px 6px;
             text-align: center;
             font-size: 14px;
+            vertical-align: middle;
         }
 
         th {
@@ -114,21 +115,28 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 5px;
+            justify-content: center;
+            gap: 6px;
+            padding: 4px;
+            margin: 0 auto;
         }
 
+        /* Tăng kích thước ảnh bìa sách ở tab Toàn khóa biểu */
         .book-cover {
-            width: 45px;
-            height: 60px;
+            width: 55px;
+            height: 75px;
             object-fit: cover;
-            border-radius: 4px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border-radius: 5px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.2);
             background-color: #eee;
+            display: block;
+            margin: 0 auto;
         }
 
         .subject-title {
             font-weight: bold;
             font-size: 13px;
+            text-align: center;
         }
 
         /* Chế độ xem Theo Ngày (Dành cho Học sinh) */
@@ -174,6 +182,48 @@
             justify-content: center;
             font-weight: bold;
             font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        /* Giao diện nút GV Quản lý thu gọn dạng Dropdown */
+        .admin-panel {
+            display: none;
+            background: #fff3e0;
+            border: 1px solid #ffe0b2;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .menu-toggle-btn {
+            width: 100%;
+            background-color: #e65100;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .menu-content {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px dashed #f57c00;
+        }
+
+        .admin-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
         }
 
         /* Lưu ý & Chân trang */
@@ -187,31 +237,14 @@
             line-height: 1.6;
         }
 
-        .admin-panel {
-            display: none;
-            background: #fff3e0;
-            border: 1px solid #ffe0b2;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        .admin-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 10px;
-            align-items: center;
-        }
-
-        /* Responsive UI */
+        /* Responsive UI cho thiết bị di động */
         @media (max-width: 600px) {
             .day-view-container {
                 grid-template-columns: 1fr;
             }
             .book-cover {
-                width: 35px;
-                height: 48px;
+                width: 48px;
+                height: 65px;
             }
             th, td {
                 padding: 6px 2px;
@@ -227,6 +260,7 @@
             background: rgba(0,0,0,0.5);
             justify-content: center;
             align-items: center;
+            z-index: 999;
         }
         .modal-content {
             background: white;
@@ -250,18 +284,23 @@
         <button id="authBtn" class="auth-btn" onclick="openLoginModal()">Đăng nhập Admin</button>
     </div>
 
-    <!-- Bảng điều khiển dành cho Admin -->
+    <!-- Bảng điều khiển dành cho Admin (Được thu gọn trong nút "GV Quản lý") -->
     <div id="adminPanel" class="admin-panel">
-        <h3>Quản trị viên (Giáo viên)</h3>
-        <p>Chọn thao tác quản lý:</p>
-        <div class="admin-actions">
-            <button onclick="toggleEditMode()" class="auth-btn">Chỉnh sửa TKB thủ công</button>
-            <button onclick="openBookManager()" class="auth-btn" style="background:#ff9800;">Quản lý Ảnh bìa sách</button>
-            <button onclick="downloadExcelTemplate()" class="auth-btn" style="background:#388e3c;">📥 Tải file mẫu Excel</button>
-        </div>
-        <div class="admin-actions" style="margin-top: 12px; border-top: 1px dashed #ffa726; padding-top: 10px;">
-            <input type="file" id="excelFile" accept=".xlsx, .xls" style="font-size: 13px;">
-            <button onclick="importExcelSchedule()" class="auth-btn" style="background:#8e24aa;">📤 Nhập TKB từ Excel</button>
+        <button class="menu-toggle-btn" onclick="toggleAdminMenu()">
+            <span>⚙️ GV Quản lý</span>
+            <span id="menuArrow">▼</span>
+        </button>
+        
+        <div id="adminMenuContent" class="menu-content">
+            <div class="admin-actions">
+                <button onclick="toggleEditMode()" class="auth-btn" style="background:#2196F3;">✏️ Chỉnh sửa TKB thủ công</button>
+                <button onclick="openBookManager()" class="auth-btn" style="background:#ff9800;">📚 Quản lý Ảnh bìa sách</button>
+                <button onclick="downloadExcelTemplate()" class="auth-btn" style="background:#388e3c;">📥 Tải file mẫu Excel</button>
+            </div>
+            <div class="admin-actions" style="margin-top: 5px; border-top: 1px dashed #ffa726; padding-top: 10px;">
+                <input type="file" id="excelFile" accept=".xlsx, .xls" style="font-size: 13px; max-width: 200px;">
+                <button onclick="importExcelSchedule()" class="auth-btn" style="background:#8e24aa;">📤 Nhập TKB từ Excel</button>
+            </div>
         </div>
     </div>
 
@@ -397,8 +436,20 @@
     }
 
     // -------------------------------------------------------------
-    // 3. XỬ LÝ GIAO DIỆN HIỂN THỊ
+    // 3. XỬ LÝ GIAO DIỆN HIỂN THỊ & MENU XỔ DƯỚI
     // -------------------------------------------------------------
+    function toggleAdminMenu() {
+        const menu = document.getElementById('adminMenuContent');
+        const arrow = document.getElementById('menuArrow');
+        if (menu.style.display === 'flex') {
+            menu.style.display = 'none';
+            arrow.innerText = '▼';
+        } else {
+            menu.style.display = 'flex';
+            arrow.innerText = '▲';
+        }
+    }
+
     function switchView(view) {
         document.getElementById('btnToday').classList.toggle('active', view === 'today');
         document.getElementById('btnFull').classList.toggle('active', view === 'full');
@@ -499,7 +550,6 @@
     // 4. TÍNH NĂNG NHẬP / XUẤT EXCEL
     // -------------------------------------------------------------
     function downloadExcelTemplate() {
-        // Tạo dữ liệu mẫu cho file Excel
         const sampleData = [
             { day_of_week: 2, period: 1, session: "morning", subject_name: "HĐTN" },
             { day_of_week: 2, period: 2, session: "morning", subject_name: "Tiếng Việt" },
@@ -514,8 +564,6 @@
         const worksheet = XLSX.utils.json_to_sheet(sampleData);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "ThoiKhoaBieu");
-        
-        // Tải xuống file Excel mẫu
         XLSX.writeFile(workbook, "mau_thoi_khoa_bieu.xlsx");
     }
 
@@ -534,8 +582,6 @@
                 const workbook = XLSX.read(data, { type: 'array' });
                 const firstSheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[firstSheetName];
-                
-                // Chuyển đổi dữ liệu excel thành mảng JSON
                 const rows = XLSX.utils.sheet_to_json(worksheet);
 
                 if (!rows.length) {
@@ -544,7 +590,6 @@
 
                 let count = 0;
                 for (let row of rows) {
-                    // Kiểm tra các trường bắt buộc
                     if (row.day_of_week && row.period && row.session) {
                         const { error } = await db.from('schedule').upsert({
                             day_of_week: parseInt(row.day_of_week),
@@ -559,7 +604,7 @@
 
                 alert(`Nhập thành công ${count} tiết học từ file Excel!`);
                 await loadSchedule();
-                fileInput.value = ""; // Reset input file
+                fileInput.value = "";
             } catch (err) {
                 alert("Lỗi đọc file Excel: " + err.message);
             }
