@@ -65,8 +65,10 @@
         .controls {
             display: flex;
             gap: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             justify-content: center;
+            flex-wrap: wrap;
+            align-items: center;
         }
 
         .tab-btn {
@@ -83,6 +85,30 @@
         .tab-btn.active {
             background: var(--primary-color);
             color: white;
+        }
+
+        /* Khung cài đặt chế độ xem mặc định */
+        .default-view-setting {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            background-color: #e8f5e9;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #2e7d32;
+        }
+
+        .default-view-setting select {
+            padding: 5px 10px;
+            border-radius: 5px;
+            border: 1px solid #a5d6a7;
+            font-weight: bold;
+            color: #1b5e20;
+            outline: none;
+            cursor: pointer;
         }
 
         /* Bảng thời khóa biểu toàn tuần */
@@ -293,6 +319,10 @@
                 padding: 6px 2px;
                 font-size: 12px;
             }
+            .default-view-setting {
+                flex-direction: column;
+                gap: 5px;
+            }
         }
 
         /* Modal Đăng nhập & Quản lý */
@@ -349,13 +379,27 @@
 
     <!-- Thanh chuyển đổi Chế độ Xem -->
     <div class="controls">
-        <button id="btnToday" class="tab-btn active" onclick="switchView('today')">Hôm nay</button>
+        <button id="btnToday" class="tab-btn active" onclick="switchView('day_view')">Lịch Theo Ngày</button>
         <button id="btnFull" class="tab-btn" onclick="switchView('full')">Toàn khóa biểu</button>
     </div>
 
-    <!-- VIEW 1: Xem Hôm Nay (Chia lưới 4 ô) -->
+    <!-- Cài đặt chế độ xem ngày mặc định (Lưu vào localStorage) -->
+    <div class="default-view-setting">
+        <label for="defaultDayModeSelect"><b>⚙️ Chế độ xem ngày mặc định khi mở trang:</b></label>
+        <select id="defaultDayModeSelect" onchange="changeDefaultDayMode(this.value)">
+            <option value="today">Hôm nay (Thực tế)</option>
+            <option value="next_day">Ngày tiếp theo (Soạn bài)</option>
+        </select>
+    </div>
+
+    <!-- VIEW 1: Xem Theo Ngày (Chia lưới 4 ô) -->
     <div id="todayView">
-        <h3 id="currentDayTitle" style="text-align: center; color: #388e3c; margin-bottom: 15px;"></h3>
+        <div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 15px;">
+            <h3 id="currentDayTitle" style="text-align: center; color: #388e3c; margin: 0;"></h3>
+            <button id="toggleDayModeBtn" onclick="toggleActiveDayMode()" style="padding: 4px 10px; border-radius: 12px; border: 1px solid #388e3c; background: #e8f5e9; color: #2e7d32; cursor: pointer; font-size: 12px; font-weight: bold;">
+                🔄 Chuyển sang ngày tiếp theo
+            </button>
+        </div>
         <div class="day-view-container">
             <div class="session-box">
                 <div class="session-title">☀️ BUỔI SÁNG</div>
@@ -414,7 +458,7 @@
 
 <script>
     // -------------------------------------------------------------
-    // 1. CẤU HÌNH SUPABASE
+    // 1. CẤU HÌNH SUPABASE & BIẾN TOÀN CỤC
     // -------------------------------------------------------------
     const SUPABASE_URL = "https://ncbgdgmblzvcpytvlrpm.supabase.co";
     const SUPABASE_KEY = "sb_publishable_GSlqWL9EKPhToWw3yI20lA_nU2PV8fV";
@@ -425,16 +469,35 @@
     let isEditMode = false;
     let currentUser = null;
 
+    // Biến quản lý chế độ xem ngày hiện tại ('today' hoặc 'next_day')
+    let currentDayMode = localStorage.getItem('tkb_default_day_mode') || 'today';
+
     const days = [2, 3, 4, 5, 6];
     const periods = [1, 2, 3, 4];
 
     window.onload = async () => {
+        // Cập nhật giá trị ô select từ localStorage
+        document.getElementById('defaultDayModeSelect').value = currentDayMode;
+
         checkSession();
         await loadSubjects();
         await loadSchedule();
         await loadSettings();
-        switchView('today');
+        switchView('day_view');
     };
+
+    // Lưu lựa chọn cài đặt mặc định vào LocalStorage
+    function changeDefaultDayMode(mode) {
+        currentDayMode = mode;
+        localStorage.setItem('tkb_default_day_mode', mode);
+        renderTodayView();
+    }
+
+    // Nút bấm nhanh để đổi chế độ xem giữa Hôm nay <-> Ngày tiếp theo
+    function toggleActiveDayMode() {
+        currentDayMode = (currentDayMode === 'today') ? 'next_day' : 'today';
+        renderTodayView();
+    }
 
     async function checkSession() {
         const { data: { session } } = await db.auth.getSession();
@@ -487,10 +550,10 @@
     }
 
     function switchView(view) {
-        document.getElementById('btnToday').classList.toggle('active', view === 'today');
+        document.getElementById('btnToday').classList.toggle('active', view === 'day_view');
         document.getElementById('btnFull').classList.toggle('active', view === 'full');
         
-        if (view === 'today') {
+        if (view === 'day_view') {
             document.getElementById('todayView').style.display = 'block';
             document.getElementById('fullView').style.display = 'none';
         } else {
@@ -528,20 +591,40 @@
         `;
     }
 
-    // Hiển thị giao diện "Hôm Nay" dạng Lưới 4 ô (2x2)
+    // Hiển thị giao diện "Xem Theo Ngày" dựa trên chế độ 'today' hoặc 'next_day'
     function renderTodayView() {
         const todayDate = new Date();
-        let dayOfWeek = todayDate.getDay() + 1; 
-        if (dayOfWeek === 1 || dayOfWeek === 7) dayOfWeek = 2;
+        let dayOfWeek = todayDate.getDay() + 1; // 1: CN, 2: T2, ..., 7: T7
 
-        document.getElementById('currentDayTitle').innerText = `LỊCH HỌC THỨ ${dayOfWeek}`;
+        let targetDay = dayOfWeek;
+        let modeLabel = "(HÔM NAY)";
+
+        if (currentDayMode === 'next_day') {
+            modeLabel = "(NGÀY TIẾP THEO)";
+            // Nếu hôm nay là Thứ 2 đến Thứ 5 -> Lấy ngày tiếp theo (+1)
+            // Nếu hôm nay là Thứ 6, Thứ 7 hoặc Chủ Nhật -> Lấy Thứ 2 tuần sau
+            if (dayOfWeek >= 2 && dayOfWeek <= 5) {
+                targetDay = dayOfWeek + 1;
+            } else {
+                targetDay = 2; // Thứ 2
+            }
+        } else {
+            // Nếu chọn Hôm Nay nhưng trùng thứ 7 (7) hoặc CN (1) thì mặc định hiển thị Thứ 2
+            if (dayOfWeek === 1 || dayOfWeek === 7) targetDay = 2;
+        }
+
+        // Cập nhật tiêu đề và nút chuyển đổi nhanh
+        document.getElementById('currentDayTitle').innerText = `LỊCH HỌC THỨ ${targetDay} ${modeLabel}`;
+        document.getElementById('toggleDayModeBtn').innerText = (currentDayMode === 'today') 
+            ? '🔄 Xem ngày tiếp theo' 
+            : '🔄 Xem hôm nay';
 
         let morningHTML = '';
         let afternoonHTML = '';
 
         periods.forEach(p => {
-            const morningSub = getSubject(dayOfWeek, p, 'morning');
-            const afternoonSub = getSubject(dayOfWeek, p, 'afternoon');
+            const morningSub = getSubject(targetDay, p, 'morning');
+            const afternoonSub = getSubject(targetDay, p, 'afternoon');
 
             morningHTML += `
                 <div class="period-card-grid">
