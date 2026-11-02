@@ -749,10 +749,38 @@
     async function login() {
         const email = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPassword').value;
+        
         const { data, error } = await db.auth.signInWithPassword({ email, password });
+        
         if (error) {
             alert("Đăng nhập thất bại: " + error.message);
         } else {
+            // Lấy thông tin thiết bị / trình duyệt (User Agent thay thế cho MAC ở tầng web)
+            const deviceInfo = navigator.userAgent;
+
+            // Lấy IP client (nếu có thể qua dịch vụ miễn phí)
+            let ipAddress = "Không xác định";
+            try {
+                const ipRes = await fetch('https://api.ipify.org?format=json');
+                const ipData = await ipRes.json();
+                ipAddress = ipData.ip;
+            } catch (e) {
+                console.log("Không lấy được IP");
+            }
+
+            // Lưu lịch sử đăng nhập vào bảng login_logs trên Database
+            const { error: logError } = await db.from('login_logs').insert([
+                { 
+                    email: email, 
+                    device_info: deviceInfo, 
+                    ip_address: ipAddress 
+                }
+            ]);
+
+            if (logError) {
+                console.error("Lỗi ghi lịch sử đăng nhập:", logError.message);
+            }
+
             alert("Đăng nhập thành công!");
             location.reload();
         }
